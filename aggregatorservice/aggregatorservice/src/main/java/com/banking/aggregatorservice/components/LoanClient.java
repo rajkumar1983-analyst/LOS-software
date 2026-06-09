@@ -2,6 +2,7 @@ package com.banking.aggregatorservice.components;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -12,10 +13,12 @@ import com.banking.aggregatorservice.dto.LoanDTO;
 @Component
 public class LoanClient {
 	
+    @Value("${loan.service.url}")
+    private String loanServiceURI;
 	private final WebClient webClient;
 
     public LoanClient(WebClient.Builder builder) {
-    	this.webClient = builder.baseUrl("http://localhost:8082").build();
+    	this.webClient = builder.baseUrl(loanServiceURI).build();
     }
 
     public List<LoanDTO> getLoans() {
