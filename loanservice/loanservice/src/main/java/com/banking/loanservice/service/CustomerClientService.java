@@ -12,11 +12,12 @@ public class CustomerClientService {
 
     @Autowired
     private RestTemplate restTemplate;
-    
-    private String customerServiceUrl = "http://localhost:8081/api";
+
+    @Value("${customer.service.url}")
+    private String customerServiceUrl;
 
     public CustomerDTO getCustomerById(Long customerId) {
-        String url = customerServiceUrl + "/customers/" + customerId;
+        String url = customerServiceUrl + "/api/customers/" + customerId;
         ResponseEntity<CustomerDTO> response = restTemplate.getForEntity(url, CustomerDTO.class);
         return response.getBody();
     }

@@ -8,6 +8,7 @@ import com.banking.loanservice.exception.LoanNotFoundException;
 import com.banking.loanservice.repository.LoanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.banking.loanservice.events.LoanCreatedEvent;
 
 import java.util.List;
 
@@ -17,8 +18,21 @@ public class LoanService {
     @Autowired
     private LoanRepository loanRepository;
 
+    @Autowired
+    private LoanEventPublisher loanEventPublisher;
+
     public Loan createLoan(Loan loan) {
-        return loanRepository.save(loan);
+        Loan savedLoan = loanRepository.save(loan);
+        LoanCreatedEvent event = new LoanCreatedEvent();
+
+        event.setLoanId(savedLoan.getId());
+        event.setCustomerId(savedLoan.getCustomerId());
+        event.setAmount(savedLoan.getLoanAmount());
+        event.setStatus("CREATED");
+
+        loanEventPublisher.publishLoanCreated(event);
+        return savedLoan;
+
     }
 
     public List<LoanSummaryDTO> getAllLoans() {

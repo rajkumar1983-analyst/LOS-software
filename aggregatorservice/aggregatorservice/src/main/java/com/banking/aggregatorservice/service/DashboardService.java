@@ -12,6 +12,8 @@ import com.banking.aggregatorservice.dto.CustomerDTO;
 import com.banking.aggregatorservice.dto.LoanCustomerDTO;
 import com.banking.aggregatorservice.dto.LoanDTO;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 @Service
 public class DashboardService {
 	private final LoanClient loanClient;
@@ -22,9 +24,10 @@ public class DashboardService {
         this.customerClient = customerClient;
     }
 
+    @CircuitBreaker(name = "aggregator", fallbackMethod = "getLoansWithCustomersFallback")
     public List<LoanCustomerDTO> getLoansWithCustomers() {
-    	
-    	    List<LoanDTO> loans = loanClient.getLoans();    	    
+
+    	    List<LoanDTO> loans = loanClient.getLoans();
 
     	    List<CustomerDTO> customers = customerClient.getCustomers();
     	    // Ideally: getCustomersByIds(customerIds)
@@ -39,17 +42,16 @@ public class DashboardService {
     	                Long customerId = loan.getCustomerId();
     	                CustomerDTO customer = customerMap.get(customerId);
 
-    	                if (customer == null) {
-    	                    throw new RuntimeException("Customer not found: " + customerId);
-    	                }
-
+    	                // A missing customer is a data gap, not a dependency outage: show the loan
+    	                // with placeholder customer fields rather than failing the whole dashboard
+    	                // (which would also wrongly trip the circuit breaker).
     	                return new LoanCustomerDTO(
     	                        loan.getId(),
     	                        customerId,
-    	                        customer.getSalutation(),
-    	                        customer.getFirstname(),
-    	                        customer.getLastname(),
-    	                        customer.getGender(),
+    	                        customer != null ? customer.getSalutation() : null,
+    	                        customer != null ? customer.getFirstname() : "N/A",
+    	                        customer != null ? customer.getLastname() : null,
+    	                        customer != null ? customer.getGender() : null,
     	                        loan.getLoanAmount(),
     	                        loan.getLoanType(),
     	                        loan.getStatus(),
@@ -58,6 +60,14 @@ public class DashboardService {
     	                );
     	            })
     	            .collect(Collectors.toList());
-    	}    	 
+    	}
+
+    // Invoked when the loan or customer service is unavailable (or the breaker is OPEN).
+    // Degrades gracefully: returns an empty dashboard instead of failing the request.
+    public List<LoanCustomerDTO> getLoansWithCustomersFallback(Throwable t) {
+        System.out.println("AGGREGATOR FALLBACK : dashboard degraded -> " + t.getClass().getSimpleName()
+                + ": " + t.getMessage());
+        return List.of();
+    }
     }
 

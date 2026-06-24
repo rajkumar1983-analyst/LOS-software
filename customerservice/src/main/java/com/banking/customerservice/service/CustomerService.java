@@ -25,13 +25,17 @@ public class CustomerService {
 
     public Customer createCustomer(CustomerRequest request) {
     	
-    	boolean exists = customerRepository.existsByFirstnameAndLastname(request.getFirstname(), request.getLastname());
-    	
+    	// Scope the duplicate check to the submitting applicant: the same user can't
+    	// register the same person twice, but different users may share a name.
+    	boolean exists = customerRepository.existsByFirstnameAndLastnameAndKeycloakId(
+    			request.getFirstname(), request.getLastname(), request.getKeycloakId());
+
     	if (exists)
     	{
     		throw new DuplicateCustomerException("Customer already exists");
     	}
         Customer customer = new Customer();
+        customer.setKeycloakId(request.getKeycloakId());
         customer.setSalutation(request.getSalutation());
         customer.setFirstname(request.getFirstname());
         customer.setLastname(request.getLastname());
@@ -65,15 +69,19 @@ public class CustomerService {
         		education.setInstitution(edudto.getInstitution());
         		education.setQualification(edudto.getQualification());
         		education.setCompletionYear(edudto.getCompletion_year());
+        		education.setCustomer(customer);
+        		customer.getCustomerEducation().add(education);
         	}
         }
-        
+
         if (request.getIdentity()!=null) {
         	for (CustIDDTO iddto : request.getIdentity()) {
         		CustomerIdentity custidentity = new CustomerIdentity();
         		custidentity.setIdtype(iddto.getIdtype());
         		custidentity.setIdentityValue(iddto.getIdentityValue());
         		custidentity.setValidUntil(iddto.getValidUntil());
+        		custidentity.setCust_id(customer);
+        		customer.getCustomerIdentity().add(custidentity);
         	}
         }
         

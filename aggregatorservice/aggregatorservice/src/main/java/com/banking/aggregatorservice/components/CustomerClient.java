@@ -15,11 +15,10 @@ import com.banking.aggregatorservice.dto.LoanDTO;
 @Component
 public class CustomerClient {
 
-    @Value("${customer.service.url}")
-    private String customerServiceURI;    
 	private final WebClient webClient;
-	
-	public CustomerClient(WebClient.Builder builder) {
+
+	public CustomerClient(WebClient.Builder builder,
+			@Value("${customer.service.url}") String customerServiceURI) {
 		this.webClient = builder.baseUrl(customerServiceURI).build();
     }
 	

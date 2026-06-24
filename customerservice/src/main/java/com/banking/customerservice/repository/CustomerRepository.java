@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 	
 	boolean existsByFirstnameAndLastname(String firstname,String lastname);
+	boolean existsByFirstnameAndLastnameAndKeycloakId(String firstname,String lastname,String keycloakId);
 	List<CustomerSummaryDTO> findAllBy();
 	Optional<Customer> findByKeycloakId(String keycloakId);
 }

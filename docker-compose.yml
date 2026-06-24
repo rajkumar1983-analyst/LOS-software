@@ -53,10 +53,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: Test@1234
       CUSTOMER_SERVICE_URL: http://customerservice:8081
       KEYCLOAK_ISSUER_URI: http://keycloak.local:9090/realms/los-realm
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     extra_hosts:
       - "keycloak.local:host-gateway"
     depends_on:
       - customerservice
+      - kafka
 
   aggregatorservice:
     image: aggregatorservice
@@ -98,13 +100,60 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      # Two broker listeners: INTERNAL for containers (kafka:29092),
+      # EXTERNAL for host clients (localhost:9092, published below).
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  auditservice:
+    image: auditservice
+    build:
+      context: ./auditservice
+    container_name: auditservice
+    ports:
+      - "8086:8086"
+    environment:
+      SERVER_PORT: 8086
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - kafka
+
+  notificationservice:
+    image: notificationservice
+    build:
+      context: ./notificationservice
+    container_name: notificationservice
+    ports:
+      - "8087:8087"
+    environment:
+      SERVER_PORT: 8087
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - kafka
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: los-keycloak
+    command: start-dev
+    ports:
+      - "9090:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    # Mounts the EXISTING volume so the los-realm, clients and users are preserved.
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    restart: unless-stopped
 
 networks:
   default:
     name: banking-network
+
+volumes:
+  keycloak_data:
+    external: true

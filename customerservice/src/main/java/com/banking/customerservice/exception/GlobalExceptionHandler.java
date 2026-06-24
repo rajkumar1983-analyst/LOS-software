@@ -2,14 +2,22 @@ package com.banking.customerservice.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // Security denials must surface as 403, not be masked as 500 by the generic handler below.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
+        logger.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
     @ExceptionHandler(DuplicateCustomerException.class)
     public ResponseEntity<String> handleAppException(DuplicateCustomerException ex) {
     	

@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name="[cust_dependant]", schema = "dbo")
@@ -29,6 +30,7 @@ public class Dependant {
     @Column(name = "dependant_age")
     private int age;
     
+	@JsonIgnore
 	@ManyToOne
     @JoinColumn(name = "cust_id")
     private Customer customer;

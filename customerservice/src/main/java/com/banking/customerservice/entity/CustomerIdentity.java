@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name="[CUST_IDENTITY]",schema="dbo")
@@ -20,6 +21,7 @@ public class CustomerIdentity {
 	@Column(name="IDENTITY_ID")
 	private int id;
 	
+	@JsonIgnore
 	@ManyToOne
     @JoinColumn(name = "cust_id")
 	private Customer customer;
