@@ -4,13 +4,13 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.banking.aggregatorservice.dto.CustomerDTO;
-import com.banking.aggregatorservice.dto.LoanDTO;
 
 @Component
 public class CustomerClient {
@@ -21,17 +21,30 @@ public class CustomerClient {
 			@Value("${customer.service.url}") String customerServiceURI) {
 		this.webClient = builder.baseUrl(customerServiceURI).build();
     }
-	
-	public List<CustomerDTO> getCustomers() {        
-        
+
+	public List<CustomerDTO> getCustomers() {
+
+        // Capture the caller's bearer token on the request thread (where the
+        // SecurityContext is available) and forward it explicitly, so the
+        // downstream @PreAuthorize-protected endpoint authenticates as the
+        // original user instead of returning 401.
+        String token = currentBearerToken();
+
         return webClient.get()
                 .uri("/api/customers")
+                .headers(h -> { if (token != null) h.setBearerAuth(token); })
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<CustomerDTO>>() {})
                 .block();
 
     }
-	
 
-	
+    private String currentBearerToken() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            return jwtAuth.getToken().getTokenValue();
+        }
+        return null;
+    }
+
 }

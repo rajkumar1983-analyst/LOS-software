@@ -12,3 +12,16 @@ export const fetchLookup = async (type) => {
 
   return response.json();
 };
+
+// Unauthenticated variant for the public registration page (no token available yet).
+export const fetchLookupPublic = async (type) => {
+  const response = await fetch(`${API_CONFIG.CUSTOMER}/api/lookups/${type}`);
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error("Lookup API error:", text);
+    throw new Error(`Failed lookup: ${type}`);
+  }
+
+  return response.json();
+};

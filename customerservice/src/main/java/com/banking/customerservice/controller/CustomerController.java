@@ -37,6 +37,14 @@ public class CustomerController {
         return new ResponseEntity<>(customerService.createCustomer(request), HttpStatus.CREATED);
     }
 
+    // Returns the customer profile of the currently logged-in user (resolved by the JWT subject),
+    // so application creation can reuse the existing profile instead of creating a new customer.
+    @GetMapping("/me")
+    @PreAuthorize("hasAuthority('CREATE_APPLICATION') or hasAuthority('APPLIED_LIST_VIEW')")
+    public CustomerRequest getMyProfile(@AuthenticationPrincipal Jwt jwt) {
+        return customerService.getByKeycloakId(jwt.getSubject());
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('APPLICATION_ALL_LIST_VIEW') or hasAuthority('APPLIED_LIST_VIEW')")
     public CustomerRequest get(@PathVariable Long id,@AuthenticationPrincipal Jwt jwt,

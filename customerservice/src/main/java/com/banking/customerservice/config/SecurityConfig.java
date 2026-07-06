@@ -37,6 +37,10 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(a -> a
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Public self-service registration (provisions the Keycloak user itself).
+                .requestMatchers(HttpMethod.POST, "/api/customers/register").permitAll()
+                // Lookups are non-sensitive reference data needed by the public register form.
+                .requestMatchers(HttpMethod.GET, "/api/lookups/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/swagger-ui/**",
                         "/swagger-ui.html",

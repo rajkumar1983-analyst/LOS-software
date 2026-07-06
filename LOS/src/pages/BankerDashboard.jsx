@@ -20,7 +20,7 @@ import {
   Alert
 } from "@mui/material";
 
-import { getAllLoans } from "../services/loanApi";
+import { getLoanSummary } from "../services/aggregatorApi";
 import { AuthContext } from "../auth/AuthContext";
 
 function KpiCard({ title, value, color = "primary.main" }) {
@@ -71,7 +71,7 @@ function BankerDashboard() {
   const fetchLoans = async () => {
     try {
       setError("");
-      const data = await getAllLoans();
+      const data = await getLoanSummary();
       setLoans(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch loans", err);

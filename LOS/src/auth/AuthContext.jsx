@@ -12,6 +12,13 @@ export const AuthProvider = ({ children }) => {
     if (initialized.current) return;
     initialized.current = true;
 
+    // Public self-service registration page: do NOT force Keycloak login, so an
+    // unauthenticated visitor can reach /register. The rest of the app stays login-required.
+    if (window.location.pathname.startsWith("/register")) {
+      setAuthenticated(false);
+      return;
+    }
+
     keycloak.init({
       onLoad: "login-required",
       checkLoginIframe: false,

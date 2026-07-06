@@ -12,6 +12,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public class CustomerRequest {
+	// Populated on read responses (e.g. GET /me, /{id}); ignored when used as a create body.
+	private Long id;
+
 	@NotBlank(message = "Salutation is Mandatory")
 	private String salutation;
 	
@@ -67,6 +70,7 @@ public class CustomerRequest {
 	}
 	
 	public CustomerRequest(Customer customer) {
+		this.id = customer.getId();
 		this.salutation = customer.getSalutation();
 		this.firstName = customer.getFirstname();
 		this.lastName = customer.getLastname();
@@ -107,6 +111,12 @@ public class CustomerRequest {
 	    }
 	}
 	
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
 	public String getSalutation() {
 		return salutation;
 	}

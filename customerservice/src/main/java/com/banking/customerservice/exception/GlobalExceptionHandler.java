@@ -26,6 +26,13 @@ public class GlobalExceptionHandler {
                              .body(ex.getMessage());
     } 
     
+    @ExceptionHandler(com.banking.customerservice.keycloak.DuplicateKeycloakUserException.class)
+    public ResponseEntity<String> handleDuplicateKeycloakUser(
+            com.banking.customerservice.keycloak.DuplicateKeycloakUserException ex) {
+        logger.warn("Duplicate Keycloak user: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
     @ExceptionHandler(DataSaveException.class)
     public ResponseEntity<String> handleAppException(DataSaveException ex) {
     	

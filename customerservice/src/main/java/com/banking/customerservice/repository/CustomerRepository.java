@@ -13,5 +13,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 	boolean existsByFirstnameAndLastnameAndKeycloakId(String firstname,String lastname,String keycloakId);
 	List<CustomerSummaryDTO> findAllBy();
 	Optional<Customer> findByKeycloakId(String keycloakId);
+	// Safe even if a (legacy shared) account maps to multiple customers.
+	Optional<Customer> findFirstByKeycloakIdOrderByIdDesc(String keycloakId);
 }
 

@@ -100,6 +100,14 @@ public class CustomerService {
 
         return new CustomerRequest(customer);
     }
+
+    @Transactional(readOnly = true)
+    public CustomerRequest getByKeycloakId(String keycloakId) {
+        Customer customer = customerRepository.findFirstByKeycloakIdOrderByIdDesc(keycloakId)
+                .orElseThrow(() -> new RuntimeException("No profile found for the current user"));
+
+        return new CustomerRequest(customer);
+    }
     
     public void deleteCustomer(Long id) {
     	boolean exists = customerRepository.existsById(id);

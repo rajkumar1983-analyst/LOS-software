@@ -29,6 +29,10 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Public self-service registration (forwarded to customerservice).
+                        .pathMatchers(HttpMethod.POST, "/api/customers/register").permitAll()
+                        // Lookups are non-sensitive reference data needed by the public register form.
+                        .pathMatchers(HttpMethod.GET, "/api/lookups/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
                         .anyExchange().authenticated()
                 )

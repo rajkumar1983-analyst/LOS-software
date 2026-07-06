@@ -4,12 +4,14 @@ import CreateApplication from "./pages/CreateApplication";
 import ViewApplication from "./pages/ViewApplication";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BankerDashboard from "./pages/BankerDashboard";
+import Register from "./pages/Register";
 
 function App() {
 
   return (
     <>
       <Routes>
+        <Route path="/register" element={<Register />} />
         <Route
           path="/"
           element={
