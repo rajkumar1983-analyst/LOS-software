@@ -34,6 +34,15 @@
         	<groupId>org.springframework.boot</groupId>
         	<artifactId>spring-boot-starter-data-jpa</artifactId>
     	</dependency>
+    	<!-- Flyway migrations (versions managed by Spring Boot); SQL Server needs its module in Flyway 10+ -->
+    	<dependency>
+        	<groupId>org.flywaydb</groupId>
+        	<artifactId>flyway-core</artifactId>
+    	</dependency>
+    	<dependency>
+        	<groupId>org.flywaydb</groupId>
+        	<artifactId>flyway-sqlserver</artifactId>
+    	</dependency>
     	<dependency>
     		<groupId>org.hibernate.validator</groupId>
     		<artifactId>hibernate-validator</artifactId>

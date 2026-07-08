@@ -31,12 +31,17 @@ services:
     environment:
       SERVER_PORT: 8081
       CORS_ALLOWED_ORIGINS: http://localhost:5173
-      SPRING_DATASOURCE_URL: jdbc:sqlserver://host.docker.internal:1433;databaseName=N7_Banking;encrypt=False;TrustServerCertificate=True
+      SPRING_DATASOURCE_URL: jdbc:sqlserver://sqlserver:1433;databaseName=N7_Banking;encrypt=False;TrustServerCertificate=True
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: Test@1234
+      # Flyway owns the schema (see src/main/resources/db/migration); Hibernate must not touch it.
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
       KEYCLOAK_ISSUER_URI: http://keycloak.local:9090/realms/los-realm
     extra_hosts:
       - "keycloak.local:host-gateway"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
 
   loanservice:
     image: loanservice
@@ -48,17 +53,23 @@ services:
     environment:
       SERVER_PORT: 8082
       CORS_ALLOWED_ORIGINS: http://localhost:5173
-      SPRING_LOAN_DATASOURCE_URL: jdbc:sqlserver://host.docker.internal:1433;databaseName=lending;encrypt=False;TrustServerCertificate=True
+      SPRING_LOAN_DATASOURCE_URL: jdbc:sqlserver://sqlserver:1433;databaseName=lending;encrypt=False;TrustServerCertificate=True
       SPRING_DATASOURCE_USERNAME: admin
       SPRING_DATASOURCE_PASSWORD: Test@1234
+      # Flyway owns the schema (see src/main/resources/db/migration); Hibernate must not touch it.
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
       CUSTOMER_SERVICE_URL: http://customerservice:8081
       KEYCLOAK_ISSUER_URI: http://keycloak.local:9090/realms/los-realm
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     extra_hosts:
       - "keycloak.local:host-gateway"
     depends_on:
-      - customerservice
-      - kafka
+      customerservice:
+        condition: service_started
+      kafka:
+        condition: service_started
+      db-init:
+        condition: service_completed_successfully
 
   aggregatorservice:
     image: aggregatorservice
@@ -91,6 +102,38 @@ services:
       - customerservice
       - loanservice
   
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      # Host SQL Server occupies 1433, so publish the container's on 14330 for tools.
+      - "14330:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Str0ngSaPwd2026"
+      MSSQL_PID: "Developer"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+  # One-shot: waits for SQL Server, then creates the app login + databases.
+  db-init:
+    image: mcr.microsoft.com/mssql-tools
+    container_name: db-init
+    depends_on:
+      - sqlserver
+    environment:
+      MSSQL_SA_PASSWORD: "Str0ngSaPwd2026"
+    volumes:
+      - ./db/init:/init:ro
+    entrypoint: >
+      /bin/bash -c "
+      for i in {1..60}; do
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' && break;
+        echo 'waiting for sqlserver...'; sleep 2;
+      done;
+      /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -i /init/01-init.sql"
+    restart: "no"
+
   kafka:
     image: apache/kafka:4.1.0
     container_name: kafka
@@ -157,3 +200,4 @@ networks:
 volumes:
   keycloak_data:
     external: true
+  mssql_data:
