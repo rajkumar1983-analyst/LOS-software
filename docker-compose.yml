@@ -198,6 +198,5 @@ networks:
     name: banking-network
 
 volumes:
-  keycloak_data:
-    external: true
+  keycloak_data:    
   mssql_data:
