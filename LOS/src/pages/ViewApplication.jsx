@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Container, Box, Paper, Grid, TextField,
-  Typography, Chip, Button, Divider
+  Typography, Chip, Button, Divider, Stack, Alert
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { getLoanById } from "../services/loanApi";
+import { getLoanById, underwriteLoan } from "../services/loanApi";
 import { getCustomerById } from "../services/customerApi";
+import { AuthContext } from "../auth/AuthContext";
 
 function ViewApplication() {
   const { id } = useParams();
@@ -15,9 +16,28 @@ function ViewApplication() {
   const [loan, setLoan] = useState(null);
   const [customer, setCustomer] = useState(null);
 
+  const { hasPermission } = useContext(AuthContext);
+  const [comments, setComments] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [actionError, setActionError] = useState("");
+
   useEffect(() => {
     loadApplication();
   }, []);
+
+  const submitDecision = async (decision) => {
+    setSubmitting(true);
+    setActionError("");
+    try {
+      await underwriteLoan({ id: loan.id, decision, comments });
+      await loadApplication(); // refresh to reflect the new status
+      setComments("");
+    } catch (err) {
+      setActionError(err.message || "Failed to submit decision");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const loadApplication = async () => {
     try {
@@ -115,6 +135,52 @@ function ViewApplication() {
             <TextField label="Phone" value={customer.phone} fullWidth disabled />
           </Grid>
         </Grid>
+
+        {hasPermission("UNDERWRITE") && (
+          <>
+            <Divider sx={{ my: 4 }} />
+            <Typography variant="h6" sx={{ mb: 2 }}>Underwriting Decision</Typography>
+
+            {actionError && <Alert severity="error" sx={{ mb: 2 }}>{actionError}</Alert>}
+
+            {loan.status === 1 || loan.status === 2 ? (
+              <Alert severity={loan.status === 1 ? "success" : "error"}>
+                This application has been {loan.status === 1 ? "accepted" : "declined"}.
+                {loan.underwriterComments ? ` Comments: ${loan.underwriterComments}` : ""}
+              </Alert>
+            ) : (
+              <>
+                <TextField
+                  label="Comments (optional)"
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                  fullWidth
+                  multiline
+                  minRows={2}
+                  sx={{ mb: 2 }}
+                />
+                <Stack direction="row" spacing={2}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    disabled={submitting}
+                    onClick={() => submitDecision(1)}
+                  >
+                    {submitting ? "Submitting…" : "Accept"}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    disabled={submitting}
+                    onClick={() => submitDecision(2)}
+                  >
+                    {submitting ? "Submitting…" : "Decline"}
+                  </Button>
+                </Stack>
+              </>
+            )}
+          </>
+        )}
       </Paper>
     </Container>
   );

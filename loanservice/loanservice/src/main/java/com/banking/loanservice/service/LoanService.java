@@ -50,10 +50,11 @@ public class LoanService {
     public Loan underwriteLoan(UnderwriteDTO underwritedto) {
     	Loan loan = loanRepository.findById(underwritedto.getId()).orElseThrow(()->new RuntimeException("Loan Not Found"));
     	loan.setUnderwriterComments(underwritedto.getComments());
-    	loan.setIsUnderwritten(underwritedto.getDecision());
-    	loan.setStatus(2);
+    	loan.setIsUnderwritten(1); // the application has now been underwritten
+    	// decision 1 = Accept -> status Accepted(1); anything else = Decline -> Rejected(2)
+    	loan.setStatus(underwritedto.getDecision() == 1 ? 1 : 2);
     	return loanRepository.save(loan);
-    	
+
     }
 }
 

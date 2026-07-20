@@ -19,6 +19,19 @@ export const getLoanById = async (id) => {
   return response.json();
 };
 
+// Banker/underwriter decision. decision: 1 = Accept, 2 = Decline.
+export const underwriteLoan = async ({ id, decision, comments }) => {
+  const response = await authFetch(`${API_CONFIG.LOAN}/api/loans/${id}/underwrite`, {
+    method: "POST",
+    body: JSON.stringify({ id, decision, comments })
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(body || "Failed to submit decision");
+  }
+  return response.text();
+};
+
 export const createLoan = async (payload) => {
   const response = await authFetch(`${API_CONFIG.LOAN}/api/loans`, {
     method: "POST",
