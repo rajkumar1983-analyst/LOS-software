@@ -22,3 +22,8 @@ dist/
 # OS
 Thumbs.db
 .DS_Store
+
+# TLS certs / private keys — never commit these (each environment provides its own)
+certs/
+*.key
+*.pem
