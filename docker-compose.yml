@@ -210,21 +210,7 @@ services:
       # Realm seed for fresh instances (read on startup by --import-realm).
       - ./keycloak/realm-export:/opt/keycloak/data/import:ro
     restart: unless-stopped
-  
-  nginx:
-    build:
-      context: ./nginx
-    container_name: nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./certs:/etc/nginx/certs:ro
-    depends_on:
-      - los-frontend
-      - api-gateway
-      - keycloak
-
+    
 networks:
   default:
     name: banking-network
